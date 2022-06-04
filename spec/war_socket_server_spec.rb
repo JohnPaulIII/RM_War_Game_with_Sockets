@@ -7,15 +7,17 @@ class MockWarSocketClient
 
   def initialize(port)
     @socket = TCPSocket.new('localhost', port)
+    sleep(0.1)
   end
 
   def provide_input(text)
     @socket.puts(text)
+    sleep(0.1)
   end
 
   def capture_output(delay=0.1)
     sleep(delay)
-    @output = @socket.read_nonblock(1000) # not gets which blocks
+    @output = @socket.read_nonblock(1000).chomp # not gets which blocks
   rescue IO::WaitReadable
     @output = ""
   end
@@ -54,6 +56,25 @@ describe WarSocketServer do
     @server.accept_new_client("Player 2")
     @server.create_game_if_possible
     expect(@server.games.count).to be 1
+  end
+
+  it "checks for communication between client and server" do
+    @server.start
+    client1 = MockWarSocketClient.new(@server.port_number)
+    @server.accept_new_client("Player 1")
+    @server.send_to_socket("Ready Up", "Player 1")
+    client1.capture_output
+    expect(client1.output).to eq "Ready Up"
+    client1.provide_input("Ready")
+    expect(@server.check_for_input("Player 1")).to eq "Ready"
+  end
+
+  it "" do
+    
+  end
+  
+  it "" do
+    
   end
 
   # Add more tests to make sure the game is being played
