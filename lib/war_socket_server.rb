@@ -43,6 +43,12 @@ class WarSocketServer
     puts "No messages waiting"
   end
 
+  def check_for_inputs(client)
+    player_sockets[client].read_nonblock(1000).chomp.split('\n')
+  rescue IO::WaitReadable
+    puts "No messages waiting"
+  end
+
   def stop
     @server.close if @server
   end

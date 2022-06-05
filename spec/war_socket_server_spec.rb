@@ -69,10 +69,80 @@ describe WarSocketServer do
     expect(@server.check_for_input("Player 1")).to eq "Ready"
   end
 
+  # it "filters out unnessecary communication" do
+
+  # end
+
+  it "prevents duplicate names from registering" do
+    @server.start
+    client1, client2 = MockWarSocketClient.new(@server.port_number), MockWarSocketClient.new(@server.port_number)
+    client1.provide_input("Player 1")
+    client2.provide_input("Player 1")
+    2.times { @server.accept_new_player }
+    expect(@server.player_sockets.length).to eq 1
+    expect(client2.capture_output).to include("name")
+  end
+
+  #Should probably be in WarGame spec
+  it "checks if a game can be run" do
+    @server.start
+    game = @server.new_game("Player 1", "Player 2")
+    expect(game.is_ready?).to eq false
+    game.ready_up("Player 1")
+    expect(game.is_ready?).to eq false
+    game.ready_up("Player 2")
+    expect(game.is_ready?).to eq true
+    result = @server.games[0].play_round
+    expect(result).to include("Player ").twice
+  end
+  
+  it "can send ready queries from WarGame" do
+    @server.start
+    client1, client2 = MockWarSocketClient.new(@server.port_number), MockWarSocketClient.new(@server.port_number)
+    client1.provide_input("Player 1")
+    2.times { @server.accept_new_player }
+    client2.provide_input("Player 2")
+    expect(@server.player_sockets.length).to eq 1
+    @server.resolve_players
+    expect(@server.player_sockets.length).to eq 2
+    expect(@server.unfinished_sockets.length).to eq 0
+    @server.create_game_if_possible
+    expect(client1.capture_output).to start_with("Player 1 ")
+    expect(client2.capture_output).to include("Ready?")
+  end
+
+  #Should probably be in WarGame spec
+  it "checks if a game is finished" do
+    @server.start
+    game = @server.new_game("Player 1", "Player 2")
+    game.players[0].hand = [PlayingCard.new("A", "Hearts")]
+    game.players[1].hand = [PlayingCard.new("2", "Clubs")]
+    expect(@server.games[0].is_finished?).to eq false
+    @server.games[0].player_ready = [true,true]
+    game.play_round
+    expect(@server.games[0].is_finished?).to eq true
+  end
+
+  it "removes game and player sockets after game finishes" do
+    @server.start
+    client1, client2 = MockWarSocketClient.new(@server.port_number), MockWarSocketClient.new(@server.port_number)
+    client1.provide_input("Player 1")
+    client2.provide_input("Player 2")
+    2.times { @server.accept_new_player }
+    @server.create_game_if_possible
+    @server.games[0].players[0].hand = [PlayingCard.new("A", "Hearts")]
+    @server.games[0].players[1].hand = [PlayingCard.new("2", "Clubs")]
+    @server.games[0].player_ready = [true,true]
+    @server.run_rounds
+    expect(@server.games.length).to eq 0
+    expect(@server.games_by_player.length).to eq 0
+    expect(@server.player_sockets.length).to eq 0
+  end
+
   it "" do
     
   end
-  
+
   it "" do
     
   end
