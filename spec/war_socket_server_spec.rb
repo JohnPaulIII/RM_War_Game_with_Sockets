@@ -62,11 +62,11 @@ describe WarSocketServer do
     @server.start
     client1 = MockWarSocketClient.new(@server.port_number)
     @server.accept_new_client("Player 1")
-    @server.send_to_socket("Ready Up", "Player 1")
+    @server.send_to_player("Ready Up", "Player 1")
     client1.capture_output
     expect(client1.output).to eq "Ready Up"
     client1.provide_input("Ready")
-    expect(@server.check_for_input("Player 1")).to eq "Ready"
+    expect(@server.check_for_input(@server.player_sockets["Player 1"])).to eq "Ready"
   end
 
   # it "filters out unnessecary communication" do
@@ -84,7 +84,7 @@ describe WarSocketServer do
   end
 
   #Should probably be in WarGame spec
-  it "checks if a game can be run" do
+  it "checks if a game can be run", :focus => true do
     @server.start
     game = @server.new_game("Player 1", "Player 2")
     expect(game.is_ready?).to eq false
