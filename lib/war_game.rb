@@ -8,12 +8,13 @@ class WarGame
   def initialize(new_players)
     @players = (0..new_players.length - 1).map { |i| WarPlayer.new(new_players[i]) }
     @player_names = new_players
-    @deck = CardDeck.new(PlayingCard).shuffle
+    @deck = CardDeck.new(PlayingCard)
+    deck.shuffle
     clear_ready
   end
 
   def start
-    deck.each_index { |i| players[i % players.length].take_card(deck[i]) }
+    deck.deck.each_index { |i| players[i % players.length].take_card(deck.deal) }
   end
 
   def is_ready?

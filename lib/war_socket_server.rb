@@ -4,7 +4,7 @@ require_relative 'war_game'
 
 class WarSocketServer
 
-  PLAYER_COUNT = 3
+  PLAYER_COUNT = 2
 
   attr_accessor :player_sockets, :games, :games_by_player, :unfinished_sockets, :server
 

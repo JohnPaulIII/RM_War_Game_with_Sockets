@@ -87,18 +87,18 @@ describe WarSocketServer do
   end
 
   #Should probably be in WarGame spec
-  it "checks if a game can be run" do
-    @server.start
-    game = @server.new_game("Player 1", "Player 2")
-    game.start
-    expect(game.is_ready?).to eq false
-    game.ready_up("Player 1")
-    expect(game.is_ready?).to eq false
-    game.ready_up("Player 2")
-    expect(game.is_ready?).to eq true
-    result = game.play_round
-    expect(result).to start_with("Player ")
-  end
+  # it "checks if a game can be run" do
+  #   @server.start
+  #   game = @server.new_game("Player 1", "Player 2")
+  #   game.start
+  #   expect(game.is_ready?).to eq false
+  #   game.ready_up("Player 1")
+  #   expect(game.is_ready?).to eq false
+  #   game.ready_up("Player 2")
+  #   expect(game.is_ready?).to eq true
+  #   result = game.play_round
+  #   expect(result).to start_with("Player ")
+  # end
   
   it "can send ready queries from WarGame" do
     @server.start
@@ -120,16 +120,16 @@ describe WarSocketServer do
   end
 
   #Should probably be in WarGame spec
-  it "checks if a game is finished" do
-    @server.start
-    game = @server.new_game("Player 1", "Player 2")
-    game.players[0].hand = [PlayingCard.new("A", "Hearts")]
-    game.players[1].hand = [PlayingCard.new("2", "Clubs")]
-    expect(game.is_finished?).to eq false
-    game.ready = [true,true]
-    game.play_round
-    expect(game.is_finished?).to eq true
-  end
+  # it "checks if a game is finished" do
+  #   @server.start
+  #   game = @server.new_game("Player 1", "Player 2")
+  #   game.players[0].hand = [PlayingCard.new("A", "Hearts")]
+  #   game.players[1].hand = [PlayingCard.new("2", "Clubs")]
+  #   expect(game.is_finished?).to eq false
+  #   game.ready = [true,true]
+  #   game.play_round
+  #   expect(game.is_finished?).to eq true
+  # end
 
   it "removes game and player sockets after game finishes" do
     @server.start

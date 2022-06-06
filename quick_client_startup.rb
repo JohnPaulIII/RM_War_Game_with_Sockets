@@ -11,7 +11,7 @@ require 'socket'
 #server = TCPServer.new('localhost', 3336)
 
 PLAYERS = ["Josh", "William", "Braden", "Caleb", "Jeremy"]
-players = 3
+players = 2
 client = []
 
 (0..players - 1).each do |i|
