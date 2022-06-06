@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require 'socket'
+
+QUERY_STRINGS = ["Please provide a username:", "Ready?"]
+
+def get_response
+
+end
+
+
+client = TCPSocket.new('localhost', 3336)
+while true
+  begin
+    
+  rescue
+
+  end
+end
+
+
+
+# while false
+#   begin
+#     #result = STDIN.read_nonblock(1000)
+    
+#   rescue
+#     #result = false
+#   ensure
+#     #puts result if result
+#     #char = STDIN.getch
+#     #STDOUT.ioflush
+#     #STDIN.raw!
+#     #STDIN.raw {puts "Hi"}
+#     #STDIN.raw {}
+#     #puts counter
+#     #puts char
+#   end
+
+# end

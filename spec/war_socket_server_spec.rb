@@ -30,7 +30,7 @@ end
 describe WarSocketServer do
   before(:each) do
     @clients = []
-    @server = WarSocketServer.new
+    @server = WarSocketServer.new(logging: false)
   end
 
   after(:each) do

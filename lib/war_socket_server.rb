@@ -7,12 +7,18 @@ class WarSocketServer
   PLAYER_COUNT = 2
 
   attr_accessor :player_sockets, :games, :games_by_player, :unfinished_sockets, :server
+  attr_reader :logging
 
-  def initialize
+  def initialize(logging: true)
     @unfinished_sockets = []
     @player_sockets = {}
     @games_by_player = {}
     @games = []
+    @logging = logging
+  end
+
+  def puts(text)
+    super(text) if logging
   end
 
   def port_number
@@ -82,7 +88,6 @@ class WarSocketServer
   def create_game_if_possible
     return unless player_sockets.length > (games.length + 1) * PLAYER_COUNT - 1
     players = (0..PLAYER_COUNT - 1).map { |i| player_sockets.keys[games.length * 2 + i] }
-    puts players
     game = new_game(players)
     games.push(game)
     players.each do |player|
