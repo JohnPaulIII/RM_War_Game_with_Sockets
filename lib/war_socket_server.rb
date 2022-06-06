@@ -1,9 +1,12 @@
 require 'socket'
 require 'pry'
+require_relative 'war_game'
 
 class WarSocketServer
 
-  attr_accessor :player_sockets, :games, :games_by_player
+  PLAYER_COUNT = 3
+
+  attr_accessor :player_sockets, :games, :games_by_player, :unfinished_sockets, :server
 
   def initialize
     @unfinished_sockets = []
@@ -18,52 +21,83 @@ class WarSocketServer
 
   def start
     @server = TCPServer.new(port_number)
-    @server.listen(3)
   end
 
-  def accept_new_client(player_name = "Random Player")
-    client = @server.accept_nonblock
-    player_sockets[player_name] = client
-  rescue IO::WaitReadable, Errno::EINTR
-    puts "No client to accept"
+  def stop
+    @server.close if @server
   end
+
+  # def accept_new_client(player_name = "Random Player")
+  #   client = @server.accept_nonblock
+  #   player_sockets[player_name] = client
+  # rescue IO::WaitReadable, Errno::EINTR
+  #   puts "No client to accept"
+  # end
 
   def accept_new_player
     client = @server.accept_nonblock
-    puts client
-    check_for_player_name(client) if !client.nil?
+    puts "New Connection" if client
+    check_for_player_name(client, add_to_unfinished: true, ask_for_username: true) if !client.nil?
   rescue IO::WaitReadable, Errno::EINTR
-    puts "skip"
+    #puts "skip"
   end
 
-  def check_for_player_name(client, add_to_unfinished: false)
+  def accept_new_client(name)
+    client = @server.accept_nonblock
+    puts "New Connection" if client
+    add_to_player_sockets(client, name) if !client.nil?
+  rescue IO::WaitReadable, Errno::EINTR
+    #puts "skip"
+  end
+
+  def check_for_player_name(client, add_to_unfinished: false, ask_for_username: false)
     response = check_for_input(client)
-    if player_sockets.keys.include?(response)
-      send_to_socket("Username already exists, please choose a different name:", client)
+    if !response && ask_for_username
+      send_to_socket("Please provide a username:", client)
       unfinished_sockets.push(client) if add_to_unfinished
-    else
-      if response
-        player_sockets[response] = client
-      else
-        unfinished_sockets.push(client) if add_to_unfinished
-      end
+    elsif player_sockets.keys.include?(response)
+      send_to_socket("Username already exists, please choose a different name:", client) if response
+      unfinished_sockets.push(client) if add_to_unfinished
+    elsif response
+      puts "New Player: #{response}"
+      add_to_player_sockets(client, response, add_to_unfinished: add_to_unfinished)
     end
   end
 
+  def add_to_player_sockets(client, name, add_to_unfinished: false)
+    if name
+      player_sockets[name] = client
+      unfinished_sockets.delete(client) if !add_to_unfinished
+      send_to_player("Waiting for more players", name)
+    else
+      unfinished_sockets.push(client) if add_to_unfinished
+    end
+  end
+
+  def resolve_players
+    return if unfinished_sockets == []
+    unfinished_sockets.each { |socket| check_for_player_name(socket) }
+  end
+
   def create_game_if_possible
-    return unless player_sockets.length > games.length * 2 + 1
-    player1, player2 = player_sockets.keys[games.length * 2], player_sockets.keys[games.length * 2 + 1]
-    game = "#{player1} is playing against #{player2}"
+    return unless player_sockets.length > (games.length + 1) * PLAYER_COUNT - 1
+    players = (0..PLAYER_COUNT - 1).map { |i| player_sockets.keys[games.length * 2 + i] }
+    puts players
+    game = new_game(players)
     games.push(game)
-    [player1, player2].each { |player| games_by_player[player] = game}
+    players.each do |player|
+      games_by_player[player] = game
+      other_players = players.reject { |name| name == player}.join(", ")
+      send_to_player("You have joined a game with #{other_players}.  Ready?", player)
+    end
   end
 
   def send_to_socket(message, client)
     client.puts message
   end
 
-  def send_to_player(message, client)
-    player_sockets[client].puts message
+  def send_to_player(message, name)
+    player_sockets[name].puts message
   end
 
   def check_for_input(client)
@@ -75,10 +109,50 @@ class WarSocketServer
   def check_for_inputs(client)
     player_sockets[client].read_nonblock(1000).chomp.split('\n')
   rescue IO::WaitReadable
-    puts "No messages waiting"
+    #puts "No messages waiting"
   end
 
-  def stop
-    @server.close if @server
+  def new_game(players)
+    game = WarGame.new(players)
+    game.start
+    game
+  end
+
+  def gather_ready_ups
+    games_by_player.each_pair do |name, game|
+      responses = check_for_inputs(name)
+      if responses
+        responses.each do |response|
+          game.ready_up(name) if response
+          puts "#{name} has readied up"
+        end
+      end
+      "Ran"
+    end
+  end
+
+  def run_rounds
+    games.each do |game|
+      if game.is_ready?
+        puts "Running game"
+        result = game.play_round
+        puts result
+        game.player_names.each do |player|
+          send_to_player(result, player)
+          send_to_player("Ready?", player)
+        end
+        if game.is_finished?
+          game.player_names.each do |player|
+            games_by_player.delete(player)
+            send_to_player(game.finish_message, player)
+            player_sockets[player].close
+            player_sockets.delete(player)
+            puts "#{player} has been removed"
+          end
+          games.delete(game)
+          puts "A game has been removed"
+        end
+      end
+    end
   end
 end
