@@ -27,18 +27,13 @@ class WarSocketServer
 
   def start
     @server = TCPServer.new(port_number)
+    #END { @server.close if @server }
+    puts "Server has started"
   end
 
   def stop
     @server.close if @server
   end
-
-  # def accept_new_client(player_name = "Random Player")
-  #   client = @server.accept_nonblock
-  #   player_sockets[player_name] = client
-  # rescue IO::WaitReadable, Errno::EINTR
-  #   puts "No client to accept"
-  # end
 
   def accept_new_player
     client = @server.accept_nonblock
@@ -90,6 +85,10 @@ class WarSocketServer
     players = (0..PLAYER_COUNT - 1).map { |i| player_sockets.keys[games.length * 2 + i] }
     game = new_game(players)
     games.push(game)
+    assign_players(players, game)
+  end
+
+  def assign_players(players, game)
     players.each do |player|
       games_by_player[player] = game
       other_players = players.reject { |name| name == player}.join(", ")
@@ -123,41 +122,63 @@ class WarSocketServer
     game
   end
 
+  #Should be demoted to WarGameRunner
   def gather_ready_ups
     games_by_player.each_pair do |name, game|
       responses = check_for_inputs(name)
-      if responses
-        responses.each do |response|
-          game.ready_up(name) if response
-          puts "#{name} has readied up"
-        end
+      next unless responses
+      responses.each do |response|
+        game.ready_up(name) if response
+        puts "#{name} has readied up"
       end
-      "Ran"
     end
   end
 
+  #Rewrite to interact with WarGameRunner instead
   def run_rounds
     games.each do |game|
       if game.is_ready?
-        puts "Running game"
-        result = game.play_round
-        puts result
-        game.player_names.each do |player|
-          send_to_player(result, player)
-          send_to_player("Ready?", player)
-        end
-        if game.is_finished?
-          game.player_names.each do |player|
-            games_by_player.delete(player)
-            send_to_player(game.finish_message, player)
-            player_sockets[player].close
-            player_sockets.delete(player)
-            puts "#{player} has been removed"
-          end
-          games.delete(game)
-          puts "A game has been removed"
-        end
+        run_game(game)
+        remove_game_if_finished(game)
       end
+    end
+  end
+
+  #Should be demoted to WarGameRunner
+  def run_game(game)
+    puts "Running game"
+    puts result = game.play_round
+    game.player_names.each do |player|
+      send_to_player(result, player)
+      send_to_player("Ready?", player)
+    end
+  end
+  
+  def remove_game_if_finished(game)
+    return unless game.is_finished?
+    garbage_removal(game)
+    games.delete(game)
+    puts "A game has been removed"
+  end
+
+  def garbage_removal(game)
+    game.player_names.each do |player|
+      games_by_player.delete(player)
+      send_to_player(game.finish_message, player)
+      player_sockets[player].close
+      player_sockets.delete(player)
+      puts "#{player} has been removed"
+    end
+  end
+
+  def run_server
+    start
+    while true
+      accept_new_player
+      resolve_players
+      create_game_if_possible
+      gather_ready_ups
+      run_rounds
     end
   end
 end
