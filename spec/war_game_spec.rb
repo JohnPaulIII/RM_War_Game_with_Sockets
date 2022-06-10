@@ -23,7 +23,7 @@ describe WarGame do
     expect(game.is_finished?).to eq true
   end
 
-  it "checks if a round runs past an initial tie", :focus => true do
+  it "checks if a round runs past an initial tie" do
     game = WarGame.new(["Player 1", "Player 2"])
     game.players[0].hand = [PlayingCard.new("A", "Hearts"), PlayingCard.new("A", "Clubs")]
     game.players[1].hand = [PlayingCard.new("2", "Clubs"), PlayingCard.new("A", "Spades")]
@@ -104,7 +104,7 @@ describe WarGame do
     expect(game.finish_message).to start_with("Player 1")
   end
 
-  it 'should run to completion', :focus => true  do
+  it 'should run to completion'  do
     game = WarGame.new(["Player 1", "Player 2"])
     game.start
     until game.is_finished? do

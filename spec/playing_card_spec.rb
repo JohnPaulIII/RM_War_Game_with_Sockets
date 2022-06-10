@@ -39,4 +39,13 @@ describe 'PlayingCard' do
     expect(card1).to be < card3
   end
 
+  it 'is testing an assignment from Ken' do
+    ace_spades_1 = PlayingCard.new('A', 'Spades')
+    ace_spades_2 = PlayingCard.new('A', 'Spades')
+    hash = { ace_spades_2 => 'WILD' }
+    expect(ace_spades_1 == ace_spades_2).to  be(true)
+    expect(ace_spades_1).to eq(ace_spades_2)
+    expect(hash[ace_spades_2]).to eq('WILD')
+  end
+
 end

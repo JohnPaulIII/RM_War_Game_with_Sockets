@@ -33,14 +33,17 @@ describe WarSocketClient do
 
   it 'can send and recieve from client' do
     socket1 = @server.accept
-    socket1.puts "Hello"
-    sleep(0.1)
+    send(socket1, "Hello")
     expect(@client.check_for_server_output).to eq "Hello"
-    socket1.puts "Ready?"
-    sleep(0.1)
+    send(socket1, "Ready?")
     expect(@client.check_for_server_output(MockIO.new("yes"))).to eq "Ready?"
     sleep(0.1)
     expect(socket1.read_nonblock(1000)).to eq "yes\n"
+  end
+
+  def send(client, message)
+    client.puts message
+    sleep(0.01)
   end
 
 end

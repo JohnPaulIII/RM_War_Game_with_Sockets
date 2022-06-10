@@ -7,12 +7,12 @@ class MockWarSocketClient
 
   def initialize(port)
     @socket = TCPSocket.new('localhost', port)
-    sleep(0.1)
+    sleep(0.01)
   end
 
   def provide_input(text)
     @socket.puts(text)
-    sleep(0.1)
+    sleep(0.01)
   end
 
   def capture_output(delay=0.1)

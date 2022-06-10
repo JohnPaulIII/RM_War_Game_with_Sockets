@@ -146,6 +146,7 @@ class WarSocketServer
 
   #Should be demoted to WarGameRunner
   def run_game(game)
+    #WarGameRunner.run_game()
     puts "Running game"
     puts result = game.play_round
     game.player_names.each do |player|
